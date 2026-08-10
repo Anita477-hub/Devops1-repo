@@ -2,3 +2,4 @@
 Configuring terraform code
 This is new file
 beacuse
+new file
