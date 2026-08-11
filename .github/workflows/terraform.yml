@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Gitleaks code scan
-        uses: gitleaks/gitleaks-action@v2.3.4
+        uses: gitleaks/gitleaks-action@3
       
       - name: setup terraform
         uses: hashicorp/setup-terraform@v3
