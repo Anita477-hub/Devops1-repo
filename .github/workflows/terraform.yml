@@ -31,6 +31,8 @@ jobs:
 
       - name: checkov security scanning
         uses: bridgecrewio/checkov-action@v12.1347.0
+        with:
+          directory: environment/dev
         
       - name: Trivy security scan
         uses: aquasecurity/trivy-action@v0.36.0
