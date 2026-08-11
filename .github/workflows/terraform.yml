@@ -22,9 +22,18 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v4
+
+      - name: Gitleaks code scan
+        uses: gitleaks/gitleaks-action@v2.3.4
       
       - name: setup terraform
         uses: hashicorp/setup-terraform@v3
+
+      - name: checkov security scanning
+        uses: bridgecrewio/checkov-action@v12.1347.0
+        
+      - name: Trivy security scan
+        uses: aquasecurity/trivy-action@v0.36.0
 
       - name: terraform format check
         run: terraform fmt -check -recursive
