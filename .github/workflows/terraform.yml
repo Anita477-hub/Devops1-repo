@@ -1,0 +1,106 @@
+name: terraform-CI/CD pipeline
+
+on:
+  push:
+    branches:
+     - main
+     - "feature/**"
+
+  pull_request:
+    branches:
+      -main
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-plan:
+
+    name: Terraform plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: terraform format check
+        run: terraform fmt -check -recursive
+
+      - name: terraform init
+        working-directory: environment/dev
+        env:
+            ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+            ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+            ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+            ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+        run: terraform init
+
+      - name: terraform validate
+        working-directory: environment/dev
+        run: terraform validate
+
+
+      - name: terraform plan
+        working-directory: environment/dev
+        env:
+            ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+            ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+            ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+            ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+        run: terraform plan -input=false -var-file="terraform.tfvars" -out="tfplan"
+
+      - name: Save plan for apply job
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-file
+          path: environment/dev/tfplan
+
+  terraform-apply:
+    name: Terraform-apply
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    # environment:
+    #   name: prod
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+
+    
+
+    steps:
+
+     - name: checkout code
+       uses: actions/checkout@v4
+
+     - name: setup terraform
+       uses: hashicorp/setup-terraform@v3
+
+     - name: terraform init
+       working-directory: environment/dev
+       env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+       run: terraform init
+      
+     - name: Download reviewed plan
+       uses: actions/download-artifact@v4
+       with:
+          name: terraform-plan-file
+          path: environment/dev
+
+     - name: terraform apply
+       working-directory: environment/dev
+       env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}  
+          
+       run: terraform apply -auto-approve tfplan
