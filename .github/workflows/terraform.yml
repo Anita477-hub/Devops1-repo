@@ -4,7 +4,7 @@ on:
   push:
     branches:
      - main
-    #  - "feature/**"
+     - "feature/**"
 
   pull_request:
     branches:
@@ -25,6 +25,8 @@ jobs:
 
       - name: Gitleaks code scan
         uses: gitleaks/gitleaks-action@v3
+        with:
+          fetch-depth: 0
 
       - name: setup terraform
         uses: hashicorp/setup-terraform@v3
@@ -80,8 +82,8 @@ jobs:
     name: Terraform-apply
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
-    # environment:
-    #   name: prod
+    environment:
+      name: prod
     needs: terraform-plan
     runs-on: ubuntu-latest
 
